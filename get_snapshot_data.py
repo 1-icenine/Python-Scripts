@@ -79,6 +79,7 @@ def scrape_and_save(url):
                 "Statements of Support": cols[1].text.strip().replace(',', ''),
                 "Threshold": cols[2].text.strip().replace(',', ''),
                 "Percentage": cols[3].text.strip().replace('%', ''),
+                "snapshot_url": url,
             })
 
         driver.quit()
