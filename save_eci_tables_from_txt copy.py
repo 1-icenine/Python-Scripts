@@ -17,7 +17,7 @@ def extract_capture_date(url):
     if match:
         timestamp = match.group(1)
         dt = datetime.strptime(timestamp, "%Y%m%d%H%M%S")
-        return dt.strftime("%Y-%m-%d"), dt.strftime("%H-%M-%S")
+        return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M:%S")
     return "unknown_date", "unknown_time"
 
 def scrape_and_save(url):
@@ -176,8 +176,21 @@ if __name__ == "__main__":
     print_summary(success_log, nodata_log, exception_log, duration)
 
     if master_df is not None:
-        master_df.to_csv("eci_master.csv", index=False)
-        print(f"📦 Initial scrape data saved to eci_master.csv")
+        master_df["capture_date"] = pd.to_datetime(master_df["capture_date"], errors="coerce")
+        capture_dates = master_df["capture_date"].dropna().sort_values()
+
+        if not capture_dates.empty:
+            start_date = capture_dates.iloc[0].strftime("%Y-%m-%d")
+            end_date = capture_dates.iloc[-1].strftime("%Y-%m-%d")
+            if start_date == end_date:
+                filename = f"eci_{start_date}.csv"
+            else:
+                filename = f"eci_{start_date}_to_{end_date}.csv"
+        else:
+            filename = "eci_master.csv"
+
+        master_df.to_csv(filename, index=False)
+        print(f"📦 Data saved to {filename}")
 
     with open("exception_urls.txt", "w") as f:
         for url in exceptions:
@@ -224,8 +237,23 @@ if __name__ == "__main__":
                 master_df = pd.concat([master_df, retry_merged], ignore_index=True)
             else:
                 master_df = retry_merged
-            master_df.to_csv("eci_master.csv", index=False)
-            print(f"📦 Updated eci_master.csv with retry successes")
+
+            # Apply same filename logic after retries
+            master_df["capture_date"] = pd.to_datetime(master_df["capture_date"], errors="coerce")
+            capture_dates = master_df["capture_date"].dropna().sort_values()
+
+            if not capture_dates.empty:
+                start_date = capture_dates.iloc[0].strftime("%Y-%m-%d")
+                end_date = capture_dates.iloc[-1].strftime("%Y-%m-%d")
+                if start_date == end_date:
+                    filename = f"eci_{start_date}.csv"
+                else:
+                    filename = f"eci_{start_date}_to_{end_date}.csv"
+            else:
+                filename = "eci_master.csv"
+
+            master_df.to_csv(filename, index=False)
+            print(f"📦 Updated {filename} with retry successes")
 
         print_summary(retry_success_log, retry_nodata_log, retry_exception_log, retry_duration)
 
