@@ -14,7 +14,7 @@ def get_wayback_links(calendar_url, results, index, all_failed_days, all_mismatc
     label = f"[Thread-{index}]"
 
     options = Options()
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
@@ -51,7 +51,7 @@ def get_wayback_links(calendar_url, results, index, all_failed_days, all_mismatc
                     calendar_days = driver.find_elements(By.CLASS_NAME, "calendar-day")
                     time.sleep(0.5)
                     if len(calendar_days) != total_days:
-                        print(f"{label} ⚠️ Warning: day count changed during iteration.")
+                        print(f"{label} ⚠️  Warning: day count changed during iteration.")
                     day = calendar_days[i]
 
                     fallback_date = f"Index {i} (label={day.text})"
@@ -73,7 +73,7 @@ def get_wayback_links(calendar_url, results, index, all_failed_days, all_mismatc
                         actions.move_to_element(day).perform()
                     except StaleElementReferenceException:
                         retries += 1
-                        print(f"{label} ⚠️ Stale hover element, retrying {fallback_date} (attempt {retries})")
+                        print(f"{label} ⚠️  Stale hover element, retrying {fallback_date} (attempt {retries})")
                         time.sleep(1)
                         continue
 
@@ -82,7 +82,7 @@ def get_wayback_links(calendar_url, results, index, all_failed_days, all_mismatc
                             EC.presence_of_element_located((By.CLASS_NAME, "popup-of-day-content"))
                         )
                     except TimeoutException:
-                        print(f"{label} ⚠️ Popup did not appear for {fallback_date}, skipping")
+                        print(f"{label} ⚠️  Popup did not appear for {fallback_date}, skipping")
                         full_date_str = fallback_date
                         break
 
@@ -111,7 +111,7 @@ def get_wayback_links(calendar_url, results, index, all_failed_days, all_mismatc
                     try:
                         scrollable_div = popup.find_element(By.CSS_SELECTOR, "ul.day-tooltip-shapshot-list > div > div")
                     except Exception:
-                        print(f"{label} ⚠️ Scroll container not found for {full_date_str}, skipping")
+                        print(f"{label} ⚠️  Scroll container not found for {full_date_str}, skipping")
                         break
 
                     last_height = -1
