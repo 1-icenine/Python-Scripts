@@ -1,4 +1,6 @@
 import time
+from datetime import datetime
+import re
 import os
 import threading
 from selenium import webdriver
@@ -195,8 +197,30 @@ for url_set in results:
     all_urls.update(url_set)
 
 unique_urls = sorted(all_urls)
+date_pattern = re.compile(r"/web/(\d{8})")
+date_list = []
 
-with open("wayback_snapshot_urls.txt", "w") as f:
+for url in unique_urls:
+    match = date_pattern.search(url)
+    if match:
+        date_str = match.group(1)
+        try:
+            dt = datetime.strptime(date_str, "%Y%m%d")
+            date_list.append(dt)
+        except ValueError:
+            continue
+
+# Default name in case no dates were found
+filename = "wayback_snapshot_urls.txt"
+
+# If dates found, create descriptive filename
+if date_list:
+    start_date = min(date_list).strftime("%Y-%m-%d")
+    end_date = max(date_list).strftime("%Y-%m-%d")
+    filename = f"snapshotLinks_{start_date}_to_{end_date}.txt"
+
+# Save to descriptive file
+with open(filename, "w") as f:
     for url in unique_urls:
         f.write(url + "\n")
 
