@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 
 # Retrieve directory where my script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,7 +24,8 @@ df_latest = df_latest[df_latest["Country"] != "Total number of signatories"]
 # Sort by statements of support from highest to lowest
 df_latest_sorted = df_latest.sort_values("Statements of Support", ascending=True)
 
-# Plotting features
+# Plot
+
 df_latest_sorted["Remaining Needed"] = df_latest_sorted.apply(
     lambda row: max(row["Threshold"] - row["Statements of Support"], 0), axis=1
 )
@@ -36,6 +39,11 @@ bars_support = plt.barh(df_latest_sorted["Country"],
                         df_latest_sorted["Statements of Support"], 
                         color=colors, label="Support Count")
 
+# Compute percent of threshold met
+df_latest_sorted["Percent Met"] = (
+    df_latest_sorted["Statements of Support"] / df_latest_sorted["Threshold"]
+).clip(upper=1.0) * 100  # clip to 100% max
+
 ax = plt.gca()
 # Plot Threshold bars slightly thinner and transparent
 for i, thresh in enumerate(df_latest_sorted["Threshold"]):
@@ -44,6 +52,7 @@ for i, thresh in enumerate(df_latest_sorted["Threshold"]):
 
     # y-position of the bar center
     y = i  
+
     # Plot a vertical dashed line at threshold, spanning only across the bar's y position ± some padding
     ax.vlines(x=thresh, ymin=y - 0.4, ymax=y + 0.4, colors='red', linestyles='dashed', linewidth=1)
 
@@ -52,12 +61,36 @@ plt.title("Statements of Support by Country with Thresholds")
 
 # Add support count labels on bars
 labels = [
-    "" if rem == 0 else f"{int(rem)} needed"
-    for rem in df_latest_sorted["Remaining Needed"]
+    "" if rem == 0 else f"{int(rem)} needed; {pct:.1f}% of the way there!"
+    for rem, pct in zip(df_latest_sorted["Remaining Needed"], df_latest_sorted["Percent Met"])
 ]
 
-plt.bar_label(bars_support, labels=labels, padding=10)
+# Custom legend items
+blue_patch = Patch(color='blue', label='Below Threshold')
+gray_patch = Patch(color='gray', label='Threshold Met')
+red_line = Line2D([], [], color='red', linestyle='--', label='Threshold Value')
 
+plt.legend(handles=[blue_patch, gray_patch, red_line], loc='lower right')
+
+for i, row in df_latest_sorted.iterrows():
+    y = df_latest_sorted.index.get_loc(i)
+    support = row["Statements of Support"]
+    threshold = row["Threshold"]
+    percent = row["Percent Met"]
+    remaining = row["Remaining Needed"]
+
+    if remaining > 0:
+        label = f"{int(remaining)} needed; ({percent:.1f}%)"
+        xpos = threshold + threshold*0.2  # small offset to the right of the red line
+        ax.text(xpos, y, label, va='center', fontsize=9)
+
+    # else:
+    #     # Already passed → we’re skipping these labels
+    #     label = f"{percent:.1f}%"
+    #     xpos = support + support * 0.01
+    #     ax.text(xpos, y, label, va='center', fontsize=9)
+
+plt.grid(axis = 'x')
 plt.tight_layout()
 plt.show()
 
