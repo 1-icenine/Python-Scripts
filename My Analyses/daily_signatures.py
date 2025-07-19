@@ -14,7 +14,7 @@ campaign_end_date = pd.to_datetime("2025-07-31")
 
 # --- Preprocessing ---
 df['capture_date'] = pd.to_datetime(df['capture_date'])
-earliest_dataset_date = df['capture_date'].min().date()   # <--- Moved here
+earliest_dataset_date = df['capture_date'].min().date()
 df.sort_values(by='capture_date', inplace=True)
 
 # Select only total number of signatories
